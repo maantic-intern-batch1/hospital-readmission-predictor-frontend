@@ -1,11 +1,14 @@
-import { Button, Container, Typography } from "@mui/material";
+/* eslint-disable no-unused-vars */
+import { Button, Container, Tooltip, Typography } from "@mui/material";
 import axios from "axios";
 import { useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import InputText from "../component/InputText";
 import SelectOption from "../component/SelectOption";
 import { patientData, patientData_for_input } from "../constants/data";
-import { useNavigate } from "react-router-dom";
-import toast, { Toaster } from "react-hot-toast";
+import { IoIosLogOut } from "react-icons/io";
+import { useDispatch } from "react-redux";
+import { userNotExists } from "../redux/reducers/auth";
 
 // eslint-disable-next-line react/prop-types
 const FormLayout = ({ loading, setLoading, setOutput }) => {
@@ -61,8 +64,9 @@ const FormLayout = ({ loading, setLoading, setOutput }) => {
     Hospital_Stay_Duration: "",
     Distance_From_Hospital: "",
   });
-
-  const navigate = useNavigate();
+  // const [loading, setLoading] = useState(false)
+  const dispatch = useDispatch();
+  const server_url = import.meta.env.VITE_SERVER_URL;
 
   // Handle input change
   function changeHandler(event) {
@@ -74,49 +78,83 @@ const FormLayout = ({ loading, setLoading, setOutput }) => {
   }
 
   // Handle form submission
-  function submitHandler(event) {
+  async function submitHandler(event) {
     event.preventDefault();
     const age = parseInt(formData.Age.trim());
     if (age < 18 || age > 90) {
       toast.error("Please enter age between 18-60");
       return;
     }
-    if (parseInt(formData.Previous_Readmissions.trim()) < 0 || parseInt(formData.Previous_Readmissions.trim()) > 5) {
+    if (
+      parseInt(formData.Previous_Readmissions.trim()) < 0 ||
+      parseInt(formData.Previous_Readmissions.trim()) > 5
+    ) {
       toast.error("Please enter Previous_Readmissions between 0-5");
       return;
     }
-    if (parseInt(formData.Emergency_Visits.trim()) < 0 || parseInt(formData.Emergency_Visits.trim()) > 3) {
+    if (
+      parseInt(formData.Emergency_Visits.trim()) < 0 ||
+      parseInt(formData.Emergency_Visits.trim()) > 3
+    ) {
       toast.error("Please enter Emergency_Visits between 0-3");
       return;
     }
-    if (parseInt(formData.Hospital_Stay_Duration.trim()) < 1 || parseInt(formData.Hospital_Stay_Duration.trim()) > 15) {
+    if (
+      parseInt(formData.Hospital_Stay_Duration.trim()) < 1 ||
+      parseInt(formData.Hospital_Stay_Duration.trim()) > 15
+    ) {
       toast.error("Please enter Hospital_Stay_Duration between 1-15");
       return;
     }
-    if (parseInt(formData.Distance_From_Hospital.trim()) < 1 || parseInt(formData.Distance_From_Hospital.trim()) > 50) {
+    if (
+      parseInt(formData.Distance_From_Hospital.trim()) < 1 ||
+      parseInt(formData.Distance_From_Hospital.trim()) > 50
+    ) {
       toast.error("Please enter Distance_From_Hospital between 1-50");
       return;
     }
     setLoading(true);
-    getData();
+    await getData();
     setLoading(false);
-    navigate("/output");
   }
 
+  // logout handler
+  const logoutHandler = async () => {
+    toast.dismiss();  // Dismiss any existing toasts before showing a new one
+    toast.loading("Logging out...");
+    try {
+      await axios.get(`${server_url}/logout`, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      toast.dismiss();  // Dismiss loading toast after operation
+      toast.success("Logged out successfully");
+    } catch (error) {
+      toast.dismiss();  // Dismiss loading toast on error
+      toast.error("Logout failed");
+    }
+  
+    dispatch(userNotExists());
+  };
+  
+// this function handles the output predction
   const getData = async () => {
     await axios
-      .post("http://127.0.0.1:5000/app/data", formData, {
+      .post(`${server_url}/predict`, formData, {
+        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
         },
       })
       .then((res) => {
-        // console.log(
-        //   "Printing response: " + JSON.stringify(res.data.data, null, 2)
-        // );
+        console.log(
+          "Printing response: " + JSON.stringify(res.data.data, null, 2)
+        );
         setOutput(JSON.stringify(res.data.data, null, 2));
       })
-      .catch((err) => console.log(err));
+      .catch((err) => console.log("Printing output", err));
   };
 
   return (
@@ -129,8 +167,23 @@ const FormLayout = ({ loading, setLoading, setOutput }) => {
           alignItems: "center",
           flexDirection: "column",
           margin: "0 auto",
+          position: "relative",
         }}
       >
+        <Tooltip title="Logout">
+          <Button
+            sx={{
+              position: "absolute",
+              top: "2rem",
+              right: "1rem",
+              fontSize: "2rem",
+              color: "black",
+            }}
+            onClick={logoutHandler}
+          >
+            <IoIosLogOut />
+          </Button>
+        </Tooltip>
         <Typography variant="h4" sx={{ mt: "3rem" }}>
           Hospital Readmission Predictor
         </Typography>
