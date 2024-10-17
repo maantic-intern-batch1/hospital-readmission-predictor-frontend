@@ -22,7 +22,7 @@ const Output = ({ output, loading, setOutput }) => {
     // Cleanup function to clear the timeout if the component unmounts
     return () => clearTimeout(timer);
   }, [user, navigate]);
-  console.log(output, user);
+  // console.log(output, user);
 
   return (
     <div

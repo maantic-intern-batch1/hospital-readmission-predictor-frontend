@@ -149,12 +149,12 @@ const FormLayout = ({ loading, setLoading, setOutput }) => {
         },
       })
       .then((res) => {
-        console.log(
-          "Printing response: " + JSON.stringify(res.data.data, null, 2)
-        );
+        // console.log(
+        //   "Printing response: " + JSON.stringify(res.data.data, null, 2)
+        // );
         setOutput(JSON.stringify(res.data.data, null, 2));
       })
-      .catch((err) => console.log("Printing output", err));
+      .catch((err) => console.log("Printing output error", err));
   };
 
   return (
